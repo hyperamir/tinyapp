@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/hyperamir/tinyapp/issues"
   },
-  "homepage": "https://github.com/hyperamir/tinyapp#readme"
+  "homepage": "https://github.com/hyperamir/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
