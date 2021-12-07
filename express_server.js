@@ -31,6 +31,11 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${randStr}`); 
 });
 
+app.post("/urls/:shortURL/delete", (req, res)=>{
+  delete urlDatabase[req.params.shortURL];
+  res.redirect('/urls');
+})
+
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
