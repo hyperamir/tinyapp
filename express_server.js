@@ -28,13 +28,18 @@ app.post("/urls", (req, res) => {
   //console.log(req.body);  // Log the POST request body to the console
   const randStr = generateRandomString();
   urlDatabase[randStr] = req.body.longURL;
-  res.redirect(`/urls/${randStr}`); 
+  res.redirect(`/urls/${randStr}`);
 });
 
-app.post("/urls/:shortURL/delete", (req, res)=>{
+app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect('/urls');
-})
+});
+
+app.post("/urls/:id", (req, res) => {
+  urlDatabase[req.params.id] = req.body.longURL;
+  res.redirect(`/urls/${req.params.id}`)
+});
 
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
