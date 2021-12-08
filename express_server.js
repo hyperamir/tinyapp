@@ -27,14 +27,6 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
-app.get('/urls.json', (req, res) => {
-  res.send(urlDatabase);
-})
-
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: users[req.cookies.user_id] }
   res.render("urls_new", templateVars);
@@ -89,8 +81,31 @@ app.post("/urls/:id", (req, res) => {
   res.redirect(`/urls/${req.params.id}`)
 });
 
+app.get('/login', (req, res)=>{
+  const templateVars = {
+    urls: urlDatabase,
+    user: users[req.cookies.user_id]
+  };
+  res.render('urls_login', templateVars);
+});
+
 app.post("/login", (req, res) => {
-  res.cookie('username', req.body.username);
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if(!email || !password){
+    return res.status(400).send("Email/Password cannot be empty.");
+  }
+  const user = findUserByEmail(email);
+
+  if(!user) {
+    return res.status(403).send('User with that email Does not exists!');
+  }
+  if (user.password !== password ){
+    return res.status(403).send('Your password doesnt match!');
+  }
+
+  res.cookie('user_id', user.id);
   res.redirect('/urls');
 });
 
