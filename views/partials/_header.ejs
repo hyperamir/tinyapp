@@ -5,11 +5,12 @@
       aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse" id="navbarNavAltMarkup" style="display: flex; flex-direction: row; justify-content: space-between; width: 100%;">
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup"
+      style="display: flex; flex-direction: row; justify-content: space-between; width: 100%;">
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-        
+
       </div>
       <% if(!user){%>
 
@@ -18,12 +19,14 @@
           <a class="nav-item nav-link" href="/register">Register</a>
 
         </form>
-      <%} else{ %>
-       <h5> <%= user.email %></h5>
-       <form class="navbar-nav" action="/logout" method="POST">
-        <button type="submit" class="btn btn-primary" style="width: 80px; margin: 1em; size: 30px;">Logout</button>
-      </form>
-     <% } %>
+        <%} else{ %>
+          <h5>
+            <%= user.email %>
+          </h5>
+          <form class="navbar-nav" action="/logout" method="POST">
+            <button type="submit" class="btn btn-primary" style="width: 80px; margin: 1em; size: 30px;">Logout</button>
+          </form>
+          <% } %>
     </div>
   </nav>
 </header>

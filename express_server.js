@@ -23,13 +23,24 @@ const users = {
 }
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW"
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW"
+  }
 };
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: users[req.cookies.user_id] }
-  res.render("urls_new", templateVars);
+  const user = users[req.cookies.user_id];
+  if (user) {
+    const templateVars = { user: users[req.cookies.user_id] }
+    res.render("urls_new", templateVars);
+  } else {
+    res.redirect('/urls')
+  }
 });
 
 app.get("/register", (req, res) => {
@@ -44,11 +55,11 @@ app.post('/register', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  if(!email || !password){
+  if (!email || !password) {
     return res.status(400).send("Email/Password cannot be empty.");
   }
   const user = findUserByEmail(email);
-  if(user) {
+  if (user) {
     return res.status(400).send('An user with that email already exists!');
   }
 
@@ -64,24 +75,50 @@ app.post('/register', (req, res) => {
 
 app.post("/urls", (req, res) => {
   //console.log(req.body);  // Log the POST request body to the console
-  const randStr = generateRandomString();
-  urlDatabase[randStr] = req.body.longURL;
-  res.redirect(`/urls/${randStr}`);
+  const user = users[req.cookies.user_id];
+  if (user) {
+    const randStr = generateRandomString();
+    urlDatabase[randStr] = {
+      longURL: req.body.longURL,
+      userID: user.id
+    }
+    res.redirect(`/urls/${randStr}`);
+  } else {
+    res.status(400).send("Please login first!");
+  }
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect('/urls');
+  const user = users[req.cookies.user_id];
+  if (!user) {
+    return res.status(400).send('Login first');
+  }
+  if (urlDatabase[req.params.shortURL].userID === user.id) {
+    console.log(req.params.shortURL)
+    delete urlDatabase[req.params.shortURL];
+    res.redirect('/urls');
+  } else {
+    res.status(401).send('You dont own this page');
+  }
 });
 
 app.post("/urls/:id", (req, res) => {
-  urlDatabase[req.params.id] = req.body.longURL;
-  // console.log(req.params)
-  // console.log(req.body)
-  res.redirect(`/urls/${req.params.id}`)
+  const user = users[req.cookies.user_id];
+  if (!user) {
+    return res.status(400).send('Login first');
+  }
+  if (urlDatabase[req.params.id].userID === user.id) {
+    urlDatabase[req.params.id] = {
+      longURL: req.body.longURL,
+      userID: user.id
+    };
+    res.redirect(`/urls/${req.params.id}`)
+  } else {
+    res.status(401).send('You dont own this page');
+  }
 });
 
-app.get('/login', (req, res)=>{
+app.get('/login', (req, res) => {
   const templateVars = {
     urls: urlDatabase,
     user: users[req.cookies.user_id]
@@ -93,15 +130,15 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  if(!email || !password){
+  if (!email || !password) {
     return res.status(400).send("Email/Password cannot be empty.");
   }
   const user = findUserByEmail(email);
 
-  if(!user) {
+  if (!user) {
     return res.status(403).send('User with that email Does not exists!');
   }
-  if (user.password !== password ){
+  if (user.password !== password) {
     return res.status(403).send('Your password doesnt match!');
   }
 
@@ -115,25 +152,42 @@ app.post("/logout", (req, res) => {
 })
 
 app.get("/urls", (req, res) => {
-  const templateVars = {
-    urls: urlDatabase,
-    user: users[req.cookies.user_id]
-  };
-  res.render("urls_index", templateVars);
+  const user = users[req.cookies.user_id];
+  if (user) {
+    const templateVars = {
+      urls: urlsForUser(user.id),
+      user: users[req.cookies.user_id]
+    };
+    res.render("urls_index", templateVars);
+  } else {
+    res.render('error_login', { user });
+  }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
-    user: users[req.cookies.user_id]
-  };
-  res.render("urls_show", templateVars);
+  const user = users[req.cookies.user_id];
+  if (!user) {
+    return res.status(400).send('Login first');
+  }
+  if (urlDatabase[req.params.shortURL].userID === user.id) {
+    const templateVars = {
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL].longURL,
+      user: users[req.cookies.user_id]
+    };
+    res.render("urls_show", templateVars);
+  } else {
+    res.render('error_login', { user });
+  }
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
+  if (urlDatabase[req.params.shortURL]) {
+    const longURL = urlDatabase[req.params.shortURL].longURL;
+    res.redirect(longURL);
+  } else {
+    res.status(404).send('Short URL not found!');
+  }
 });
 
 app.listen(PORT, () => {
@@ -152,11 +206,21 @@ function generateRandomString() {
 }
 
 const findUserByEmail = (email) => {
-  for(const userId in users) {
+  for (const userId in users) {
     const user = users[userId];
-    if(user.email === email) {
+    if (user.email === email) {
       return user;
     }
   }
   return null;
+}
+
+const urlsForUser = (pid) => {
+  const subset = {};
+  for (const id in urlDatabase) {
+    if (urlDatabase[id].userID === pid) {
+      subset[id] = urlDatabase[id];
+    }
+  }
+  return subset;
 }
