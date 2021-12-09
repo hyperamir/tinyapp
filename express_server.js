@@ -3,6 +3,8 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
+
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(cookieParser());
@@ -54,6 +56,7 @@ app.get("/register", (req, res) => {
 app.post('/register', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
 
   if (!email || !password) {
     return res.status(400).send("Email/Password cannot be empty.");
@@ -67,7 +70,7 @@ app.post('/register', (req, res) => {
   users[id] = {
     id: id,
     email: email,
-    password: password
+    password: hashedPassword
   }
   res.cookie('user_id', id);
   res.redirect('/urls')
@@ -129,16 +132,17 @@ app.get('/login', (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  const user = findUserByEmail(email);
 
   if (!email || !password) {
     return res.status(400).send("Email/Password cannot be empty.");
   }
-  const user = findUserByEmail(email);
 
   if (!user) {
     return res.status(403).send('User with that email Does not exists!');
   }
-  if (user.password !== password) {
+
+  if (!bcrypt.compareSync( password , user.password)) {
     return res.status(403).send('Your password doesnt match!');
   }
 
@@ -169,6 +173,7 @@ app.get("/urls/:shortURL", (req, res) => {
   if (!user) {
     return res.status(400).send('Login first');
   }
+  console.log(req.params.shortURL)
   if (urlDatabase[req.params.shortURL].userID === user.id) {
     const templateVars = {
       shortURL: req.params.shortURL,
