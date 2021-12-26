@@ -1,5 +1,6 @@
 const { getUserByEmail, generateRandomString } = require('./helpers')
 const express = require("express");
+const methodOverride = require('method-override')
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
@@ -7,6 +8,7 @@ const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(methodOverride('_method'))
 app.use(cookieSession({
   name: 'session',
   keys: ['This is test for the key!']
@@ -95,7 +97,7 @@ app.post("/urls", (req, res) => {
   }
 });
 
-app.post("/urls/:shortURL/delete", (req, res) => {
+app.delete("/urls/:shortURL/delete", (req, res) => {
   const user = database[req.session.user_id];
   if (!user) {
     return res.status(400).send('Login first');
@@ -108,7 +110,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
 });
 
-app.post("/urls/:id", (req, res) => {
+app.put("/urls/:id", (req, res) => {
   const user = database[req.session.user_id];
   if (!user) {
     return res.status(400).send('Login first');
@@ -201,10 +203,10 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
-const urlsForUser = (pid) => {
+const urlsForUser = (uid) => {
   const subset = {};
   for (const id in urlDatabase) {
-    if (urlDatabase[id].userID === pid) {
+    if (urlDatabase[id].userID === uid) {
       subset[id] = urlDatabase[id];
     }
   }
